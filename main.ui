@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>673</height>
+    <width>776</width>
+    <height>649</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -125,7 +125,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
     <property name="geometry">
      <rect>
       <x>570</x>
-      <y>560</y>
+      <y>540</y>
       <width>75</width>
       <height>51</height>
      </rect>
@@ -141,7 +141,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
     <property name="geometry">
      <rect>
       <x>660</x>
-      <y>560</y>
+      <y>540</y>
       <width>75</width>
       <height>51</height>
      </rect>
@@ -190,7 +190,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
      </item>
      <item>
       <property name="text">
-       <string>Mega</string>
+       <string>NaverWorks</string>
       </property>
      </item>
     </widget>
@@ -243,7 +243,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
       <x>113</x>
       <y>500</y>
       <width>591</width>
-      <height>41</height>
+      <height>31</height>
      </rect>
     </property>
     <property name="font">
@@ -307,7 +307,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
     <property name="handleWidth">
      <number>20</number>
     </property>
-    <widget class="QWidget" name="">
+    <widget class="QWidget" name="layoutWidget">
      <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,2">
       <property name="spacing">
        <number>0</number>
@@ -334,6 +334,7 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
      </property>
     </widget>
    </widget>
+   <zorder>splitter_3</zorder>
    <zorder>label_2</zorder>
    <zorder>lineEdit</zorder>
    <zorder>tableWidget</zorder>
@@ -348,16 +349,13 @@ border-color: rgb(0, 0, 0);border-width:1px;border-style:solid;
    <zorder>anlysis_result</zorder>
    <zorder>label_5</zorder>
    <zorder>search_line_edit</zorder>
-   <zorder>radio_MFT</zorder>
-   <zorder>radio_MFTcsv</zorder>
-   <zorder>mftdescriptor</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>776</width>
      <height>22</height>
     </rect>
    </property>

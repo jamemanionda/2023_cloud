@@ -81,7 +81,7 @@ class cloud_analysis(QMainWindow, form_class):
             file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'Text Files (*.csv);;All Files (*)',
                                                        options=options)
 
-            command = f'python {self.dfirpath} --mft "{self.mft_filepaths}" {file_name}'
+            command = f'python {self.dfirpath} --mft "{self.mft_filepaths}" "{file_name}"'
             os.system(command)
 
             self.df = pd.read_csv(file_name, encoding='utf-8', sep=',', low_memory=False, usecols = ['Source', 'Path', '$SI M timestamp','$SI A timestamp','$SI C timestamp','$SI E timestamp','$SI USN value','$FN M timestamp','$FN A timestamp','$FN C timestamp','$FN E timestamp','$OBJID timestamp','File size'])
