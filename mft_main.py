@@ -6,8 +6,13 @@ from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QTableWidgetItem
 from PyQt5.QtWidgets import QApplication
 
+if getattr(sys, 'frozen', False):
+    application_path = sys._MEIPASS
+else:
+    application_path = os.path.dirname(os.path.abspath(__file__))
 
-form_class = uic.loadUiType("main.ui")[0]
+form_class = os.path.join(application_path, 'main.ui')
+form_class = uic.loadUiType(form_class)[0]
 #test
 
 class cloud_analysis(QMainWindow, form_class):
@@ -62,18 +67,21 @@ class cloud_analysis(QMainWindow, form_class):
     def input_mft(self):
         mft_filename = QFileDialog.getOpenFileName(self, 'File Load', '', 'All File(*)')
         mftfile = mft_filename[0]
-
+        self.dfirpath = os.path.join(application_path, "dfir_ntfs\\ntfs_parser")
         if mftfile:
+
             self.mft_filepath = mftfile.replace('/', '\\')
-            self.fileInput1.setText(self.mft_filepath)
-            if self.mft_filepath not in self.filepath_list:
-                self.filepath_list.append(self.mft_filepath)
+            self.mft_filepaths = os.path.join(application_path, self.mft_filepath)
+
+            self.fileInput1.setText(self.mft_filepaths)
+            if self.mft_filepaths not in self.filepath_list:
+                self.filepath_list.append(self.mft_filepaths)
 
             options = QFileDialog.Options()
             file_name, _ = QFileDialog.getSaveFileName(self, 'Save File', '', 'Text Files (*.csv);;All Files (*)',
                                                        options=options)
 
-            command = f'python dfir_ntfs\\ntfs_parser --mft "{self.mft_filepath}" {file_name}'
+            command = f'python {self.dfirpath} --mft "{self.mft_filepaths}" {file_name}'
             os.system(command)
 
             self.df = pd.read_csv(file_name, encoding='utf-8', sep=',', low_memory=False, usecols = ['Source', 'Path', '$SI M timestamp','$SI A timestamp','$SI C timestamp','$SI E timestamp','$SI USN value','$FN M timestamp','$FN A timestamp','$FN C timestamp','$FN E timestamp','$OBJID timestamp','File size'])
@@ -114,6 +122,10 @@ class cloud_analysis(QMainWindow, form_class):
         selected_option = self.sender().currentText()
         if selected_option == "Dropbox":
             self.selectcloud = 1
+        elif selected_option == 'GoogleDrive':
+            self.selectcloud = 2
+        elif selected_option == 'NaverWorks':
+            self.selectcloud = 3
 
     def open_csv(self, csvfile):
         file_name = csvfile
@@ -190,7 +202,7 @@ class cloud_analysis(QMainWindow, form_class):
 
     def inputvalue(self, filename):
         timelist = self.fileparsetime(filename)
-
+        result = ''
         if timelist is None:
             return
 
@@ -222,7 +234,7 @@ class cloud_analysis(QMainWindow, form_class):
         }
 
         if self.selectcloud == 1:  # cloud 가 dropbox 일때
-            for i in [SI_MTime, FN_MTime]:
+            for i in [SI_MTime]:
                 a = i.split('.')
                 if a[1] == '000000000':
                     FP0 = 1
@@ -232,37 +244,37 @@ class cloud_analysis(QMainWindow, form_class):
                     self.set_command_value(urpc["RPC"], "Upload", 1)
                     self.set_command_value(urpc["RPC"], "Copy", 1)
                     self.set_command_value(ulpc["RPC"], "Copy", 1)
-                    #result = 'remote PC(Upload or Copy) or remote PC(Copy) - Uploaded by local'
+                    result += 'remote PC(UPload or Copy) by remote PC, remote PC(Copy) by local PC'
                 else:
                     if SI_RTime == FN_RTime:
                         self.set_command_value(urpc["RPC"], "Move", 1)
                         self.set_command_value(urpc["RPC"], "Rename", 1)
 
-                        result = 'remote PC(Move or Rename)'
+                        result += 'remote PC(Move or Rename) - Uploaded by remote PC'
                     else:
                         if SI_MTime == FN_MTime:
                             self.set_command_value(urpc["LPC"], "Rename", 1)
                             self.set_command_value(urpc["LPC"], "Move", 1)
-                            result = 'local PC(Move or Rename)'
+                            result += 'local PC(Move or Rename) - Uploaded by remote PC'
                         else:
                             self.set_command_value(urpc["LPC"], "Copy", 1)
-                            result = 'local PC(Copy)'
+                            result += 'local PC(Copy) - Uploaded by remote PC'
 
 
             elif FP0 == 0:
                 if SI_CTime == FN_MTime == FN_ATime == FN_CTime == FN_RTime:
                     self.set_command_value(ulpc["LPC"], "Upload", 1)
                     self.set_command_value(ulpc["LPC"], "Copy", 1)
-                    result = 'local PC(UC)  - Uploaded by local'
+                    result += 'local PC(UC) - Uploaded by local'
 
                 elif SI_RTime == FN_RTime:
                     self.set_command_value(ulpc["RPC"], "Move", 1)
                     self.set_command_value(ulpc["RPC"], "Rename", 1)
-                    result = 'remote PC(MR)'
+                    result += 'remote PC(MR) - Uploaded by local'
                 else:
                     self.set_command_value(ulpc["LPC"], "Move", 1)
                     self.set_command_value(ulpc["LPC"], "Rename", 1)
-                    result = 'local PC(MR)'
+                    result += 'local PC(MR) - Uploaded by local'
 
         elif self.selectcloud == 2:  # cloud 가 google 일때
             for i in timelist:
@@ -271,27 +283,72 @@ class cloud_analysis(QMainWindow, form_class):
 
             if FP0 == 1:
                 if SI_CTime == FN_MTime == FN_ATime == FN_CTime == FN_RTime:
-                    result = 'local PC(C)'
+                    self.set_command_value(urpc["LPC"], "Copy", 1)
+                    result += 'local PC(C)'
                 else:
                     if SI_MTime == FN_MTime:
-                        result = 'local PC(MR) or Remote PC(M) or remote PC(C)'
+                        self.set_command_value(ulpc["RPC"], "Copy", 1)
+                        self.set_command_value(urpc["RPC"], "Move", 1)
+                        self.set_command_value(urpc["LPC"], "Move", 0.5)
+                        self.set_command_value(urpc["LPC"], "Rename", 0.5)
+                        result += 'Local PC(M or C) Remote PC(M) by Remote PC\n Remote PC(C) by Local PC'
                     else:
                         if FN_MTime == FN_ATime:
-                            result = 'remote PC(UC)'
+                            self.set_command_value(urpc["RPC"], "Upload", 0.5)
+                            self.set_command_value(urpc["RPC"], "Copy", 0.5)
+                            result += 'remote PC(U or C)'
                         else:
-                            result = 'remote PC(R)'
+                            self.set_command_value(ulpc["RPC"], "Rename", 1)
+                            self.set_command_value(urpc["RPC"], "Rename", 1)
+                            result += 'remote PC(R) by Remote PC \n remote PC(R) by Local PC'
 
             elif FP0 == 0:
                 if SI_CTime == FN_MTime == FN_ATime == FN_CTime == FN_RTime:
-                    result = 'local PC(UC)'
+                    result += 'local PC(UC)'
                 else:
-                    result = 'local PC(UR) and remote PC(M)'
+                    result += 'local PC(UR) and remote PC(M)'
 
-        elif self.selectcloud == 3:  # cloud 가 mega 일때
-            for i in timelist:
+        elif self.selectcloud == 3:  # cloud 가 naverworks 일때
+            for i in [SI_MTime]:
                 a = i.split('.')
-                FP0 = 1 if a[1][3:] == '0000' else 0
-        result = {}
+                if a[1] == '000000000':
+                    FP0 = 1
+
+            if FP0 == 1:
+                if SI_MTime == SI_RTime == SI_ATime == FN_MTime == FN_RTime == FN_ATime:
+                    if SI_CTime == FN_CTime:
+                        self.set_command_value(ulpc["RPC"], "Copy", 1)
+                        self.set_command_value(urpc["RPC"], "Copy", 1)
+                        result += 'Remote PC(C) by Local PC \n Remote PC(C) by Remote PC'
+                    else :
+                        self.set_command_value(urpc["RPC"], "Upload", 1)
+                        result += 'Remote PC(U) by Remote PC'
+                else :
+                    if SI_CTime == FN_CTime and a[1][3:] == '0000':
+                        self.set_command_value(urpc["RPC"], "Move", 0.5)
+                        self.set_command_value(urpc["RPC"], "Rename", 0.5)
+                        result += 'Remote PC(M or R) by Remote PC'
+                    else :
+                        self.set_command_value(urpc["LPC"], "Copy", 1)
+                        result += 'Local PC(C) by Remote PC'
+
+
+            elif FP0 == 0:
+                if SI_CTime == FN_MTime == FN_ATime == FN_CTime == FN_RTime:
+                    self.set_command_value(ulpc["LPC"], "Copy", 1)
+                    self.set_command_value(ulpc["LPC"], "Upload", 1)
+                    result += 'Local PC(C or U) by Local PC'
+                else :
+                    if SI_ATime == FN_ATime:
+                        self.set_command_value(ulpc["RPC"], "Move", 1)
+                        self.set_command_value(urpc["RPC"], "Move", 1)
+                        result += 'Remote PC(M) by Local PC \n Remote PC(M) by Remote PC'
+                    else:
+                        self.set_command_value(ulpc["RPC"], "Rename", 1)
+                        self.set_command_value(urpc["RPC"], "Rename", 1)
+                        result += 'Remote PC(R) by Local PC \n Remote PC(R) by Remote PC'
+
+        result2 = {}
         resultn = {}
 
         for key, value in ulpc.items():
@@ -300,9 +357,9 @@ class cloud_analysis(QMainWindow, form_class):
                 if count == 1:
                     sub_result[cmd] = count
             if sub_result:
-                result[key] = sub_result
+                result2[key] = sub_result
 
-        result2 = ("ULPC"+str(result))
+        result2 = ("ULPC"+str(result2))
         ulpc.clear()
 
         for key, value in urpc.items():
@@ -313,7 +370,7 @@ class cloud_analysis(QMainWindow, form_class):
             if sub_result:
                 resultn[key] = sub_result
         result3 =("URPC"+str(resultn))
-        self.anlysis_result.setText(result2+result3)
+        self.anlysis_result.setText(result2+result3+'\n'+result)
         urpc.clear()
 
 
